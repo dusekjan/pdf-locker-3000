@@ -1,6 +1,6 @@
 import os
 import sys
-from PyPDF2 import PdfReader, PdfWriter
+from PyPDF2 import PdfReader, PdfWriter, errors
 
 
 # Aktuální složka + /Locked_files
@@ -26,6 +26,8 @@ def pdf_locker(pdf_file):
 
 
 def take_a_walk(path):
+    locked = list()
+    unread = list()
     counter = 0
     for root, _, files in os.walk(path):
         for soubor in files:
@@ -36,10 +38,32 @@ def take_a_walk(path):
                     cesta_ke_pdf = os.path.join(root, soubor)
                     pdf_locker(cesta_ke_pdf)
                     counter += 1
+                    
+                except errors.FileNotDecryptedError:
+                    print()
+                    print("CHYBA:")
+                    print(f"Tento soubor '{soubor}' se zdá zaheslovaný, nechávám ho být.")
+                    print()
+                    locked.append(soubor)
+
+                except errors.PdfReadError:
+                    print()
+                    print(f"CHYBA:")
+                    print(f"Tento soubor '{soubor}' nelze otevřít z důvodu neznámé chyby, nechávám ho být.")
+                    print()
+                    unread.append(soubor)
+        
                 except Exception as e:
+                    print(f"CHYBA U SOUBORU {soubor}")
                     print(e)
+                    print(type(e))
                     sys.exit(f"Zastavuji, počet uzamčených souborů: {counter}")
     print(f"PDF soubory byly uzamčeny, celkový počet: '{counter}'")
+    print()
+    print("Souhrn již zamčených souborů: ", *locked if locked else "žádné")
+    print()
+    print("Souhrn neotevřitelných souborů: ", *unread if unread else "žádné")
+    print()
 
 
 if __name__ == "__main__":
@@ -82,3 +106,6 @@ if __name__ == "__main__":
         print(row)
 
     print("|" + "_"*55 + "|")
+
+    print()
+    input("Pro ukončení stiskni 'Enter'")
